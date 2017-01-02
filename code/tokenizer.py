@@ -38,11 +38,6 @@ def tokens_spacy(doc: spacy.tokens.doc.Doc)->Iterator[str]:
             if tokens.pos_ != 'PUNCT')
 
 
-def xgrams(tokens: List[List[str]])->List[List[str]]:
-    xgram_model = Phrases(tokens)
-    return [xgram_model[token] for token in tokens]
-
-
 def analyzer_spacy(docstr: str)->List[str]:
     return compose(list,
                    remove_symbols,
@@ -64,11 +59,6 @@ def multipledocs_spacy(filename: str)->List[List[str]]:
     '''
     flg = file_line_gen(filename)
     return [analyzer_spacy(line.strip())for line in flg]
-
-
-def uni2xgrams(tokens: List[List[str]])->List[List[str]]:
-        return compose(xgrams,
-                       xgrams)(tokens)
 
 
 def serialize_tokens(filename: str, tokens: List[List[str]])->None:
