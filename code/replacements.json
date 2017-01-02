@@ -1,7 +1,6 @@
 [
 {
-    "aluminium": " aluminum ",
-    "_[\\w]*": " ",
+"aluminium": " aluminum ",
 "[\\W]H[\\W]": " Hydrogen ",
 "[\\W]He[\\W]": " Helium ",
 "[\\W]Li[\\W]": " Lithium ",
@@ -98,6 +97,9 @@
 "[\\W]Fm[\\W]": " Fermium ",
 "[\\W]Md[\\W]": " Mendelevium ",
 "[\\W]Lr[\\W]": " Lawrencium ",
-"[]#[$%&()*+-_/:<=>@^{}|]": " "
+"[#$%&)*+_/:<=>@^{}|]": " ",
+"\\[": " ",
+"]": " ",
+"-": " "
 }
 ]
