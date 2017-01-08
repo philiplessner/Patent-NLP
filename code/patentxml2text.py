@@ -113,8 +113,6 @@ if __name__ == '__main__':
     replace_patterns = [(k, v) for k, v in replace_dictionary[0].items()]
     elements_replacer = RegexpReplacer(patterns=replace_patterns)
     docs_woxml = compose(remove_extrawhitespace,
-                         # tolowercase,
-                         # remove_punctuation,
                          elements_replacer.replace,
                          remove_nonascii,
                          remove_numbers,
