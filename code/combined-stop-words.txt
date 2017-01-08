@@ -162,9 +162,6 @@ can
 can't
 cannot
 capable
-capacitance
-capacitor
-capacitors
 carried
 carrying
 cause
@@ -203,14 +200,10 @@ complete
 completely
 complicated
 composed
-composition
-compositions
 comprise
 comprises
 comprising
 compromised
-condenser
-condensers
 condition
 conditions
 consequently
@@ -262,7 +255,6 @@ despite
 detail
 detailed
 details
-deteriorated
 detriment
 detrimental
 develop
@@ -322,7 +314,6 @@ eight
 eighth
 eighty
 either
-electrolytic
 element
 eliminate
 eliminated
@@ -395,7 +386,6 @@ f
 facilitate
 fact
 far
-farad
 favorably
 feasible
 feasiblity
@@ -1018,7 +1008,6 @@ small
 smaller
 smallest
 so
-solid
 solve
 solved
 solving
@@ -1195,7 +1184,6 @@ unto
 unwanted
 up
 upon
-ups
 us
 use
 used
