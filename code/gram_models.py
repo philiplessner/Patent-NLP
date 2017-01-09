@@ -1,13 +1,12 @@
 from typing import Iterator, List
+from toolz import compose, curry
+from toolz.curried import do
 import spacy
 import gensim
 from gensim.models.phrases import Phrases, Phraser
 from gensim.models.word2vec import LineSentence
 import global_constants
 from utilities import save2file, save_model
-
-
-nlp = spacy.load('en')
 
 
 def doc2sents(filename: str)->str:
@@ -24,6 +23,18 @@ def doc2sents(filename: str)->str:
     return ''.join(sentences)
 
 
+def doc2processed_doc(filename: str)->str:
+    with open(filename, 'r', encoding='utf-8') as f:
+        documents = []  # type: List[str]
+        for doc in nlp.pipe((line for line in f),
+                            batch_size=5000, n_threads=-1):
+            newdoc = ' '.join((token.lemma_
+                               for token in doc
+                               if not token.is_punct))
+            documents.append(newdoc)
+    return ''.join(documents)
+
+
 def xgram_model(filename: str)->gensim.models.phrases.Phrases:
     return Phraser(Phrases(LineSentence(filename)))
 
@@ -34,6 +45,7 @@ def remove_stopwords(stopfile: str, tokens: Iterator[str])->Iterator[str]:
     return (token for token in tokens if token not in stops)
 
 
+@curry
 def xgram_strings(filename: str,
                   xgram_model: gensim.models.phrases.Phraser)->str:
     return '\n'.join(' '.join(xgram_model[sentences])
@@ -41,14 +53,16 @@ def xgram_strings(filename: str,
 
 
 if __name__ == '__main__':
-    sentences = doc2sents(global_constants.SOURCE_FILE)
-    save2file(global_constants.UNI_SENTS, sentences)
-    bigram_model = xgram_model(global_constants.UNI_SENTS)
-    save_model(global_constants.BI_MODEL, bigram_model)
-    bigram_sentences = xgram_strings(global_constants.UNI_SENTS,
-                                     bigram_model)
-    save2file(global_constants.BI_SENTS, bigram_sentences)
-    trigram_model = xgram_model(global_constants.BI_SENTS)
-    save_model(global_constants.TRI_MODEL, trigram_model)
-    trigram_sentences = xgram_strings(global_constants.BI_SENTS, trigram_model)
-    save2file(global_constants.TRI_SENTS, trigram_sentences)
+    nlp = spacy.load('en')
+    xgram_pipe = compose(save2file(global_constants.TRI_SENTS),
+                         xgram_strings(global_constants.BI_SENTS),
+                         do(save_model(global_constants.TRI_MODEL)),
+                         xgram_model,
+                         save2file(global_constants.BI_SENTS),
+                         xgram_strings(global_constants.UNI_SENTS),
+                         do(save_model(global_constants.BI_MODEL)),
+                         xgram_model,
+                         save2file(global_constants.UNI_SENTS),
+                         doc2sents)
+    # xgram_pipe(global_constants.SOURCE_FILE)
+    lemmatized = doc2processed_doc(global_constants.SOURCE_FILE)
