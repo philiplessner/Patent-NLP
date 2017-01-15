@@ -23,6 +23,29 @@ def doc2sents(filename: str)->str:
     return ''.join(sentences)
 
 
+def get_doc(infile: str) -> Iterator[str]:
+    with open(infile, 'r', encoding='utf-8') as inf:
+        for line in inf:
+            yield line.strip()
+
+
+def get_sentence(infile: str) -> Iterator[str]:
+    for doc in nlp.pipe(get_doc(infile),
+                        batch_size=5000, n_threads=-1):
+        for sent in doc.sents:
+            yield ' '.join((token.lemma_
+                            for token in sent
+                            if not token.is_punct)) + '\n'
+
+
+@curry
+def doc2sents2(outfile: str, infile: str) -> str:
+        with open(outfile, 'w', encoding='utf-8') as outf:
+            for newsent in get_sentence(infile):
+                outf.write(newsent)
+        return outfile
+
+
 def doc2processed_doc(filename: str)->str:
     with open(filename, 'r', encoding='utf-8') as f:
         documents = []  # type: List[str]
@@ -62,7 +85,8 @@ if __name__ == '__main__':
                          xgram_strings(global_constants.UNI_SENTS),
                          do(save_model(global_constants.BI_MODEL)),
                          xgram_model,
-                         save2file(global_constants.UNI_SENTS),
-                         doc2sents)
-    # xgram_pipe(global_constants.SOURCE_FILE)
-    lemmatized = doc2processed_doc(global_constants.SOURCE_FILE)
+                         # save2file(global_constants.UNI_SENTS),
+                         doc2sents2(global_constants.UNI_SENTS))
+    xgram_pipe(global_constants.SOURCE_FILE)
+    # lemmatized = doc2processed_doc(global_constants.SOURCE_FILE)
+    # doc2sents2(global_constants.SOURCE_FILE, '../intermediate/test.txt')
