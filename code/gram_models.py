@@ -1,4 +1,5 @@
 from typing import Iterator
+import multiprocessing
 from toolz import compose, curry
 from toolz.curried import do
 import spacy
@@ -15,20 +16,44 @@ def get_doc(infile: str) -> Iterator[str]:
             yield line.strip()
 
 
-def get_sentence(infile: str) -> Iterator[str]:
+def get_doc2(infile: str) -> Iterator[str]:
+    with open(infile, 'r', encoding='utf-8') as inf:
+        for line in inf:
+            yield line
+
+
+def process_sentence(infile: str) -> Iterator[str]:
     for doc in nlp.pipe(get_doc(infile),
-                        batch_size=5000, n_threads=-1):
+                        batch_size=5000,
+                        n_threads=multiprocessing.cpu_count()):
         for sent in doc.sents:
             yield ' '.join((token.lemma_
                             for token in sent
                             if not token.is_punct)) + '\n'
 
 
+def process_document(infile: str) -> Iterator[str]:
+    for doc in nlp.pipe(get_doc(infile),
+                        batch_size=5000,
+                        n_threads=multiprocessing.cpu_count()):
+        yield ' '.join((token.lemma_
+                        for token in doc
+                        if not token.is_punct))
+
+
+@curry
+def doc2processed_doc(outfile: str, infile: str) -> str:
+    with open(outfile, 'w', encoding='utf-8') as outf:
+        for processed_doc in process_document(infile):
+            outf.write(processed_doc)
+    return outfile
+
+
 @curry
 def doc2sents(outfile: str, infile: str) -> str:
     with open(outfile, 'w', encoding='utf-8') as outf:
-        for newsent in get_sentence(infile):
-            outf.write(newsent)
+        for sentence in process_sentence(infile):
+            outf.write(sentence)
     return outfile
 
 
@@ -69,5 +94,6 @@ if __name__ == '__main__':
                          do(save_model(global_constants.BI_MODEL)),
                          xgram_model,
                          doc2sents(global_constants.UNI_SENTS))
-    xgram_pipe(global_constants.SOURCE_FILE)
-    # lemmatized = doc2processed_doc(global_constants.SOURCE_FILE)
+    # xgram_pipe(global_constants.SOURCE_FILE)
+    doc2processed_doc('../intermediate/abstractclaims_lem.txt',
+                      global_constants.SOURCE_FILE)
