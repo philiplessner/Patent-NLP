@@ -70,7 +70,7 @@ def remove_stopwords(stopfile: str, tokens: Iterator[str])->Iterator[str]:
 def xgram_strings(filename: str,
                   xgram_model: gensim.models.phrases.Phraser) -> Iterator[str]:
     for sentences in LineSentence(filename):
-        yield ' '.join(xgram_model[sentences])
+        yield ' '.join(xgram_model[sentences]) + '\n'
 
 
 @curry
@@ -94,6 +94,6 @@ if __name__ == '__main__':
                          do(save_model(global_constants.BI_MODEL)),
                          xgram_model,
                          doc2sents(global_constants.UNI_SENTS))
-    # xgram_pipe(global_constants.SOURCE_FILE)
-    doc2processed_doc('../intermediate/abstractclaims_lem.txt',
-                      global_constants.SOURCE_FILE)
+    xgram_pipe(global_constants.SOURCE_FILE)
+    # doc2processed_doc('../intermediate/abstractclaims_lem.txt',
+                      # global_constants.SOURCE_FILE)
