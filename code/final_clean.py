@@ -1,5 +1,5 @@
 import re
-from toolz import compose
+from cytoolz import compose
 import global_constants
 from utilities import read_file, save2file
 
