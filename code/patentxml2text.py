@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from itertools import chain
 from typing import List, Iterator
 import json
-from toolz import compose
+from cytoolz import compose
 import global_constants
 
 
@@ -29,6 +29,25 @@ def get_indivdocs(filepath: str)->List[str]:
     return d
 
 
+def get_indivdocs2(filepath: str) -> Iterator[str]:
+    '''Split a file contanining multiple xml docs into a list that contains
+       each xml doc as a string.
+       Parameter
+            filepath: path to file containing multiple xml docs
+       Returns
+            list of strs with each string being an individual xml document
+    '''
+    s = ""
+    with open(filepath, 'r') as f:
+        for l in f:
+            if l == '<?xml version="1.0" encoding="UTF-8"?>\n':
+                if len(s) > 0:
+                    yield s
+                s = ""
+            s += l
+        yield s
+
+
 def patent_type(doc: str, patenttype_tocheck: str)->bool:
     root = ET.fromstring(doc)
     bib = root.findall('us-bibliographic-data-grant')
@@ -42,12 +61,29 @@ def filter_patents(docs: List[str])->Iterator[str]:
     return (doc for doc in docs if patent_type(doc, 'utility'))
 
 
+def filter_patents2(filepath: str)->Iterator[str]:
+    for doc in get_indivdocs2(filepath):
+        if patent_type(doc, 'utility'):
+            yield doc
+
+
 def xml2plaintext(raw_xml: Iterator[str])->Iterator[Iterator[str]]:
     tags_toget = ['abstract', 'claims']
     return (chain.from_iterable((''.join(child.itertext()).splitlines()
                                  for child in ET.fromstring(doc)
                                  if child.tag in tags_toget))
             for doc in raw_xml)
+
+
+def get_patentnumbers(filepath: str) -> Iterator[str]:
+    for doc in filter_patents2(filepath):
+        yield str(int(ET.fromstring(doc).findall('.//doc-number')[0].text))
+
+
+def patentnumber2file(infile: str, outfile: str) -> None:
+    with open(outfile, 'w', encoding='utf-8') as of:
+        for doc in get_patentnumbers(infile):
+            of.write(doc + '\n')
 
 
 def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
