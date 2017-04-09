@@ -24,12 +24,25 @@ def save2file(filepath: str, tosave: str)->str:
 
 
 def read_file(filepath: str)->str:
+    '''Read a utf-8 encoded text file and place results in a string
+    Parameters
+        filepath: full string path to file
+    Returns
+        contents: a string contaning contents of file
+    '''
     with open(filepath, 'r', encoding='utf-8') as f:
         contents = f.read()
     return contents
 
 
 def lines_from_file(filepath: str, line: int)->str:
+    '''Read a specific line from a file.
+    Parameters
+        filepath: full string path to file to read from
+        line: line in file to read (lines start at 0)
+    Returns
+        line as string
+    '''
     with open(filepath, 'r', encoding='utf-8') as f:
         contents = list(islice(f, line, line + 1))
     return contents[0]

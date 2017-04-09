@@ -22,12 +22,6 @@ def get_doc(infile: str) -> Iterator[str]:
             yield line.strip()
 
 
-def get_doc2(infile: str) -> Iterator[str]:
-    with open(infile, 'r', encoding='utf-8') as inf:
-        for line in inf:
-            yield line
-
-
 def process_sentence(infile: str) -> Iterator[str]:
     ''' Split a newline terminated string(document) into sentences using spacy
     Parameters
@@ -43,23 +37,6 @@ def process_sentence(infile: str) -> Iterator[str]:
             yield ' '.join((token.lemma_
                             for token in sent
                             if not token.is_punct)) + '\n'
-
-
-def process_document(infile: str) -> Iterator[str]:
-    for doc in nlp.pipe(get_doc(infile),
-                        batch_size=5000,
-                        n_threads=multiprocessing.cpu_count()):
-        yield ' '.join((token.lemma_
-                        for token in doc
-                        if not token.is_punct))
-
-
-@curry
-def doc2processed_doc(outfile: str, infile: str) -> str:
-    with open(outfile, 'w', encoding='utf-8') as outf:
-        for processed_doc in process_document(infile):
-            outf.write(processed_doc)
-    return outfile
 
 
 @curry
@@ -117,6 +94,51 @@ def xgrams2file(outfile: str,
     with open(outfile, 'w', encoding='utf-8') as outf:
         for gramsent in xgram_strings(infile, xgram_model):
             outf.write(gramsent)
+    return outfile
+
+
+def get_doc2(infile: str) -> Iterator[str]:
+    '''Yield new line terminated strings
+    Each string (document) is terminated by a newline
+    Parameters
+        infile: full path string to file containing strings (documents)
+    Returns
+        an iterator for each string
+    '''
+    with open(infile, 'r', encoding='utf-8') as inf:
+        for line in inf:
+            yield line
+
+
+def process_document(infile: str) -> Iterator[str]:
+    '''Lemantize and remove punctuation from strings (documents)
+    Parameters
+        infile: full string path to file with newline terminated strings
+    Returns
+        an iterator of lematized strings with punctuation removed
+
+    '''
+    for doc in nlp.pipe(get_doc(infile),
+                        batch_size=5000,
+                        n_threads=multiprocessing.cpu_count()):
+        yield ' '.join((token.lemma_
+                        for token in doc
+                        if not token.is_punct))
+
+
+@curry
+def doc2processed_doc(outfile: str, infile: str) -> str:
+    '''Write lematized strings (documents) with punctuation removed
+    to file.
+    Parameters
+        outfile: full string path to file to write processed strings
+        infile: full string path to original strings
+    Returns
+        outfile: full string path to file with processed strings
+    '''
+    with open(outfile, 'w', encoding='utf-8') as outf:
+        for processed_doc in process_document(infile):
+            outf.write(processed_doc)
     return outfile
 
 
