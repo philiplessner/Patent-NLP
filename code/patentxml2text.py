@@ -8,28 +8,7 @@ from cytoolz import compose
 import global_constants
 
 
-def get_indivdocs(filepath: str)->List[str]:
-    '''Split a file contanining multiple xml docs into a list that contains
-       each xml doc as a string.
-       Parameter
-            filepath: path to file containing multiple xml docs
-       Returns
-            list of strs with each string being an individual xml document
-    '''
-    d = []
-    s = ""
-    with open(filepath, 'r') as f:
-        for l in f:
-            if l == '<?xml version="1.0" encoding="UTF-8"?>\n':
-                if len(s) > 0:
-                    d.append(s)
-                s = ""
-            s += l
-        d.append(s)
-    return d
-
-
-def get_indivdocs2(filepath: str) -> Iterator[str]:
+def get_indivdocs(filepath: str) -> Iterator[str]:
     '''Split a file contanining multiple xml docs into a list that contains
        each xml doc as a string.
        Parameter
@@ -49,6 +28,14 @@ def get_indivdocs2(filepath: str) -> Iterator[str]:
 
 
 def patent_type(doc: str, patenttype_tocheck: str)->bool:
+    '''Check whether the patent xml document  is the type we want to collect
+    Parameters
+        doc: str containing xml document
+        patenttype_tocheck: utility, design, plant
+    Returns
+        True if patent type is the type we want
+        False if the type filed does not exist or if it is a different type
+    '''
     root = ET.fromstring(doc)
     bib = root.findall('us-bibliographic-data-grant')
     if not bib:
@@ -57,33 +44,18 @@ def patent_type(doc: str, patenttype_tocheck: str)->bool:
             else False)
 
 
-def filter_patents(docs: List[str])->Iterator[str]:
-    return (doc for doc in docs if patent_type(doc, 'utility'))
-
-
-def filter_patents2(filepath: str)->Iterator[str]:
-    for doc in get_indivdocs2(filepath):
+def filter_patents(filepath: str)->Iterator[str]:
+    for doc in get_indivdocs(filepath):
         if patent_type(doc, 'utility'):
             yield doc
 
 
-def xml2plaintext(raw_xml: Iterator[str])->Iterator[Iterator[str]]:
+def xml2plaintext(filepath: str) -> Iterator[Iterator[str]]:
     tags_toget = ['abstract', 'claims']
     return (chain.from_iterable((''.join(child.itertext()).splitlines()
                                  for child in ET.fromstring(doc)
                                  if child.tag in tags_toget))
-            for doc in raw_xml)
-
-
-def get_patentnumbers(filepath: str) -> Iterator[str]:
-    for doc in filter_patents2(filepath):
-        yield str(int(ET.fromstring(doc).findall('.//doc-number')[0].text))
-
-
-def patentnumber2file(infile: str, outfile: str) -> None:
-    with open(outfile, 'w', encoding='utf-8') as of:
-        for doc in get_patentnumbers(infile):
-            of.write(doc + '\n')
+            for doc in filter_patents(filepath))
 
 
 def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
@@ -142,6 +114,17 @@ class RegexpReplacer():
         return s
 
 
+def get_patentnumbers(filepath: str) -> Iterator[str]:
+    for doc in filter_patents(filepath):
+        yield str(int(ET.fromstring(doc).findall('.//doc-number')[0].text))
+
+
+def patentnumber2file(infile: str, outfile: str) -> None:
+    with open(outfile, 'w', encoding='utf-8') as of:
+        for doc in get_patentnumbers(infile):
+            of.write(doc + '\n')
+
+
 if __name__ == '__main__':
     filepath = global_constants.XML_FILE
     with open('replacements.json', 'r', encoding='utf-8') as f:
@@ -155,7 +138,5 @@ if __name__ == '__main__':
                          remove_allcaps,
                          tosinglestr,
                          filter_unneededstr,
-                         xml2plaintext,
-                         filter_patents,
-                         get_indivdocs)(filepath)
+                         xml2plaintext)(filepath)
     str2file(global_constants.SOURCE_FILE, docs_woxml)
