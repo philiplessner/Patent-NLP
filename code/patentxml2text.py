@@ -12,9 +12,9 @@ def get_indivdocs(filepath: str) -> Iterator[str]:
     '''Split a file contanining multiple xml docs into a list that contains
        each xml doc as a string.
        Parameter
-            filepath: path to file containing multiple xml docs
+            filepath: full path string to file containing multiple xml docs
        Returns
-            list of strs with each string being an individual xml document
+            iterator of strs with each string being an individual xml document
     '''
     s = ""
     with open(filepath, 'r') as f:
@@ -28,7 +28,7 @@ def get_indivdocs(filepath: str) -> Iterator[str]:
 
 
 def patent_type(doc: str, patenttype_tocheck: str)->bool:
-    '''Check whether the patent xml document  is the type we want to collect
+    '''Check whether the patent xml document is the type we want to collect
     Parameters
         doc: str containing xml document
         patenttype_tocheck: utility, design, plant
@@ -45,12 +45,25 @@ def patent_type(doc: str, patenttype_tocheck: str)->bool:
 
 
 def filter_patents(filepath: str)->Iterator[str]:
+    '''Filter the xml documents so only the docs with the
+    type of patent we want is returned.
+    Parameters
+        filepath: full filepath string to xml documents
+    Returns
+    an iterator of the document string
+    '''
     for doc in get_indivdocs(filepath):
         if patent_type(doc, 'utility'):
             yield doc
 
 
 def xml2plaintext(filepath: str) -> Iterator[Iterator[str]]:
+    '''Convert the xml documents into plain text from selected tags
+    Parameters
+        filepath: full filepath string to xml documents
+    Returns
+        an iterator of iterators of plaintext document strings
+    '''
     tags_toget = ['abstract', 'claims']
     return (chain.from_iterable((''.join(child.itertext()).splitlines()
                                  for child in ET.fromstring(doc)
@@ -59,6 +72,13 @@ def xml2plaintext(filepath: str) -> Iterator[Iterator[str]]:
 
 
 def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
+    '''Filter out blank strings ("").
+    Parameters
+        docs: iterator of iterator of strings
+    Returns
+        list of list of strings with "" removed
+        each list is a document
+    '''
     return [[s for s in doc if s != ''] for doc in docs]
 
 
