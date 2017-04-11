@@ -27,7 +27,7 @@ def get_indivdocs(filepath: str) -> Iterator[str]:
         yield s
 
 
-def patent_type(doc: str, patenttype_tocheck: str)->bool:
+def patent_type(doc: str, patenttype_tocheck: str) -> bool:
     '''Check whether the patent xml document is the type we want to collect
     Parameters
         doc: str containing xml document
@@ -57,7 +57,7 @@ def filter_patents(filepath: str)->Iterator[str]:
             yield doc
 
 
-def xml2plaintext(filepath: str) -> Iterator[Iterator[str]]:
+def xml2plaintext(doc: str) -> Iterator[str]:
     '''Convert the xml documents into plain text from selected tags
     Parameters
         filepath: full filepath string to xml documents
@@ -65,10 +65,16 @@ def xml2plaintext(filepath: str) -> Iterator[Iterator[str]]:
         an iterator of iterators of plaintext document strings
     '''
     tags_toget = ['abstract', 'claims']
-    return (chain.from_iterable((''.join(child.itertext()).splitlines()
-                                 for child in ET.fromstring(doc)
-                                 if child.tag in tags_toget))
-            for doc in filter_patents(filepath))
+    return chain.from_iterable((''.join(child.itertext()).splitlines()
+                                for child in ET.fromstring(doc)
+                                if child.tag in tags_toget))
+
+
+def get_plaintext(filepath: str) -> List[List[str]]:
+    filtered_docs = (doc for doc in get_indivdocs(filepath)
+                     if patent_type(doc, 'utility'))
+    plaintext = [list(xml2plaintext(doc)) for doc in filtered_docs]
+    return plaintext
 
 
 def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
@@ -158,5 +164,5 @@ if __name__ == '__main__':
                          remove_allcaps,
                          tosinglestr,
                          filter_unneededstr,
-                         xml2plaintext)(filepath)
+                         get_plaintext)(filepath)
     str2file(global_constants.SOURCE_FILE, docs_woxml)
