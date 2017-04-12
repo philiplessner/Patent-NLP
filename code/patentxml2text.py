@@ -62,7 +62,7 @@ def xml2plaintext(doc: str) -> Iterator[str]:
     Parameters
         filepath: full filepath string to xml documents
     Returns
-        an iterator of iterators of plaintext document strings
+        an iterator of plaintext document strings
     '''
     tags_toget = ['abstract', 'claims']
     return chain.from_iterable((''.join(child.itertext()).splitlines()
@@ -71,13 +71,18 @@ def xml2plaintext(doc: str) -> Iterator[str]:
 
 
 def get_plaintext(filepath: str) -> List[List[str]]:
+    '''Get plaintext documents from XML for type of document and fields wanted.
+    Parameters
+        filepath: full filepath string to XML file
+    Returns
+        A list containing lists of plaintext strings (one for each document)
+    '''
     filtered_docs = (doc for doc in get_indivdocs(filepath)
                      if patent_type(doc, 'utility'))
-    plaintext = [list(xml2plaintext(doc)) for doc in filtered_docs]
-    return plaintext
+    return [list(xml2plaintext(doc)) for doc in filtered_docs]
 
 
-def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
+def filter_unneededstr(docs: List[List[str]]) -> List[List[str]]:
     '''Filter out blank strings ("").
     Parameters
         docs: iterator of iterator of strings
@@ -88,38 +93,38 @@ def filter_unneededstr(docs: Iterator[Iterator[str]])->List[List[str]]:
     return [[s for s in doc if s != ''] for doc in docs]
 
 
-def tosinglestr(docs: List[List[str]])->str:
+def tosinglestr(docs: List[List[str]]) -> str:
     for doc in docs:
         doc.append('\n')
     return ''.join([' '.join(doc) for doc in docs])
 
 
-def remove_allcaps(docstr: str)->str:
+def remove_allcaps(docstr: str) -> str:
     return re.sub('[A-Z]{2,}', ' ', docstr)
 
 
-def remove_numbers(docstr: str)->str:
+def remove_numbers(docstr: str) -> str:
     return re.sub('[0-9]+', ' ', docstr)
 
 
-def remove_punctuation(docstr: str)->str:
+def remove_punctuation(docstr: str) -> str:
     table = str.maketrans({key: None for key in string.punctuation})
     return docstr.translate(table)
 
 
-def tolowercase(docstr: str)->str:
+def tolowercase(docstr: str) -> str:
     return docstr.lower()
 
 
-def remove_extrawhitespace(docstr: str)->str:
+def remove_extrawhitespace(docstr: str) -> str:
     return re.sub(' {2,}', ' ', docstr)
 
 
-def remove_nonascii(s: str)->str:
+def remove_nonascii(s: str) -> str:
         return "".join(i for i in s if ord(i) < 128)
 
 
-def str2file(filepath: str, docstr: str)->None:
+def str2file(filepath: str, docstr: str) -> None:
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(docstr)
 
