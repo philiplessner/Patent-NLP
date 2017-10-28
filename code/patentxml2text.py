@@ -156,6 +156,20 @@ def patentnumber2file(infile: str, outfile: str) -> None:
             of.write(doc + '\n')
 
 
+def get_classifications(filepath: str) -> Iterator[str]:
+    for doc in filter_patents(filepath):
+        root = ET.fromstring(doc)
+        yield ''.join([root.findall('.//section')[0].text,
+                       root.findall('.//class')[0].text,
+                       root.findall('.//subclass')[0].text])
+
+
+def classification2file(infile: str, outfile: str) -> None:
+    with open(outfile, 'w', encoding='utf-8') as of:
+        for doc in get_classifications(infile):
+            of.write(doc + '\n')
+
+
 if __name__ == '__main__':
     filepath = global_constants.XML_FILE
     with open('replacements.json', 'r', encoding='utf-8') as f:
