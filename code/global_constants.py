@@ -1,5 +1,7 @@
 XML_FILE = '../xml/patent.xml'
 SOURCE_FILE = '../intermediate/abstractclaims.txt'
+PATNUM_FILE = '../intermediate/patentnumbers.txt'
+CLASS_FILE = '../intermediate/classifications.txt'
 UNI_SENTS = '../intermediate/unigram_sentences.txt'
 BI_SENTS = '../intermediate/bigram_sentences.txt'
 TRI_SENTS = '../intermediate/trigram_sentences.txt'
