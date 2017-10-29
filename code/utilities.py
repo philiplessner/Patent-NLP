@@ -1,4 +1,5 @@
 from itertools import islice
+import io
 import pickle
 from typing import List
 from toolz import curry
@@ -33,6 +34,28 @@ def read_file(filepath: str)->str:
     with open(filepath, 'r', encoding='utf-8') as f:
         contents = f.read()
     return contents
+
+
+def file2list(filepath: str) -> List[str]:
+    '''Read a utf-8 encoded text file and make each line a element in
+    a list of strings
+    Parameters
+        filepath: full string path to file
+    Returns
+        listofstrings: a list containing one line per element
+    '''
+    with open(filepath, 'r', encoding='utf-8') as f:
+        listofstrings = [line.strip() for line in f]
+    return listofstrings
+
+
+def str2list(doc: str) -> List[str]:
+    output = io.StringIO()
+    output.write(doc)
+    output.seek(0)
+    listofstrings = [line.strip() for line in output]
+    output.close()
+    return listofstrings
 
 
 def lines_from_file(filepath: str, line: int)->str:
