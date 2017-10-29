@@ -3,7 +3,7 @@ import string
 import xml.etree.ElementTree as ET
 from itertools import chain
 from typing import List, Iterator
-import json
+# import json
 from cytoolz import compose
 import global_constants
 
@@ -112,6 +112,11 @@ def remove_punctuation(docstr: str) -> str:
     return docstr.translate(table)
 
 
+def remove_specialchar(docstr: str) -> str:
+    pattern = re.compile(r'[#$%&()*+_/:<=>@^{}|] | \[ | ] | -')
+    return pattern.sub(" ", docstr)
+
+
 def tolowercase(docstr: str) -> str:
     return docstr.lower()
 
@@ -139,7 +144,6 @@ class RegexpReplacer():
 
     def replace(self, text):
         s = text
-
         for (pattern, repl) in self.__patterns:
             (s, count) = re.subn(pattern, repl, s)
         return s
@@ -157,6 +161,12 @@ def patentnumber2file(infile: str, outfile: str) -> None:
 
 
 def get_classifications(filepath: str) -> Iterator[str]:
+    '''Get the CPC classfication
+    Parameter
+        filepath: full path to file containing xml
+    Returns
+        iterator of patent classfication strings, one per patent
+    '''
     for doc in filter_patents(filepath):
         root = ET.fromstring(doc)
         yield ''.join([root.findall('.//section')[0].text,
@@ -172,12 +182,13 @@ def classification2file(infile: str, outfile: str) -> None:
 
 if __name__ == '__main__':
     filepath = global_constants.XML_FILE
-    with open('replacements.json', 'r', encoding='utf-8') as f:
-        replace_dictionary = json.load(f)
-    replace_patterns = [(k, v) for k, v in replace_dictionary[0].items()]
-    elements_replacer = RegexpReplacer(patterns=replace_patterns)
+    # with open('replacements.json', 'r', encoding='utf-8') as f:
+    # replace_dictionary = json.load(f)
+    # replace_patterns = [(k, v) for k, v in replace_dictionary[0].items()]
+    # elements_replacer = RegexpReplacer(patterns=replace_patterns)
     docs_woxml = compose(remove_extrawhitespace,
-                         elements_replacer.replace,
+                         # elements_replacer.replace,
+                         remove_specialchar,
                          remove_nonascii,
                          remove_numbers,
                          remove_allcaps,
@@ -185,3 +196,5 @@ if __name__ == '__main__':
                          filter_unneededstr,
                          get_plaintext)(filepath)
     str2file(global_constants.SOURCE_FILE, docs_woxml)
+    patentnumber2file(filepath, global_constants.PATNUM_FILE)
+    classification2file(filepath, global_constants.CLASS_FILE)
