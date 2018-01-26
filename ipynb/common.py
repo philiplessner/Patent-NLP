@@ -2,6 +2,7 @@ import os
 import tarfile
 import fnmatch
 from typing import Iterator, Pattern
+import smart_open
 from cytoolz import curry
 
 
@@ -32,6 +33,12 @@ def get_archivexml(filepath: str) -> Iterator[str]:
         yield f.read().decode(encoding='utf-8')
         f.close()
     tar.close()
+
+
+def s3_line(filepath: str) -> Iterator[str]:
+    with smart_open.smart_open(filepath) as f:
+        for line in f:
+            yield line.decode(encoding='utf-8').strip()
 
 
 @curry
