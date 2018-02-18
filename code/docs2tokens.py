@@ -13,9 +13,9 @@ def get_doc(infile: str) -> Iterator[str]:
     Returns
         each string with newline stripped
     '''
-    with smart_open.smart_open(infile) as inf:
+    with smart_open.smart_open(infile, 'r', encoding='utf-8') as inf:
         for line in inf:
-            yield line.decode('utf-8').strip()
+            yield line.strip()
 
 
 def doc2tokens(infile: str) -> Iterator[str]:
@@ -43,9 +43,9 @@ def doctokens2file(infile: str, outfile: str) -> str:
     Returns
         outfile: full string path to file with processed strings
     '''
-    with smart_open.smart_open(outfile, 'wb') as outf:
+    with smart_open.smart_open(outfile, 'w', encoding='utf-8') as outf:
         for tokens in doc2tokens(infile):
-            outf.write(tokens.encode('utf-8') + '\n'.encode('utf-8'))
+            outf.write(tokens + '\n')
     return outfile
 
 
