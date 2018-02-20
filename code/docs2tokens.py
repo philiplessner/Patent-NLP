@@ -51,8 +51,9 @@ def doctokens2file(infile: str, outfile: str) -> str:
 
 if __name__ == '__main__':
     nlp = spacy.load('en_core_web_sm')
-    infile = sys.argv[1]
-    path, filename = os.path.split(infile)
-    root = os.path.splitext(filename)[0]
-    outfile = os.path.join(path, root + '_tokens.txt')
-    doctokens2file(infile, outfile)
+    infiles = sys.argv[1:]
+    for infile in infiles:
+        path, filename = os.path.split(infile)
+        root = os.path.splitext(filename)[0]
+        outfile = os.path.join(path, root + '_tokens.txt')
+        doctokens2file(infile, outfile)
