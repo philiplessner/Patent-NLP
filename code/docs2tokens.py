@@ -2,8 +2,10 @@
 import os
 import multiprocessing
 import argparse
-from typing import Iterator
+import fnmatch
+from typing import Iterator, List
 import spacy
+import boto
 import smart_open
 
 
@@ -50,29 +52,46 @@ def doctokens2file(infile: str, outfile: str) -> str:
     return outfile
 
 
+def list_file(mybucket: str, prefix: str) -> List[str]:
+    '''List files in an Amazon S3 Bucket
+       Parameters
+            mybucket: name of bucket
+            prefix: directory in bucket
+        Returns
+            filepaths: list of files in bucket, prefix
+    '''
+    bucket = boto.connect_s3().get_bucket(mybucket)
+    return [key.name for key in bucket.list(prefix=prefix)]
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Tokenize raw text lemmatize and strip punctuation')
-    parser.add_argument('filename', nargs='+')
+    description = '''Tokenize raw test by lemmatizing it
+                     and stripping punctuation.
+                     Takes a filename which can be an
+                     individual file or a UNIX style glob.'''
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=description)
+    parser.add_argument('filename')
     parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
     parser.add_argument('-o', '--output', help='Output Path')
     args = parser.parse_args()
     nlp = spacy.load('en_core_web_sm')
-    for fname in args.filename:
+    filepaths = list_file('pto-us-data', 'text-data')
+    for fname in fnmatch.filter(filepaths, args.filename):
         if args.bucket:
             infile = '/'.join(['s3:/', args.bucket, fname])
             print(infile)
+            if args.output:
+                _, filename = os.path.split(infile)
+                root = os.path.splitext(filename)[0]
+                outfile = os.path.join('s3://',
+                                       args.bucket,
+                                       args.output,
+                                       root + '_tokens.txt')
+                print(outfile)
         else:
             infile = '/'.join(['s3:/', fname])
             print(infile)
-        if args.output:
-            _, filename = os.path.split(infile)
-            root = os.path.splitext(filename)[0]
-            outfile = os.path.join('s3://',
-                                   args.bucket,
-                                   args.output,
-                                   root + '_tokens.txt')
-            print(outfile)
-        else:
             path, filename = os.path.split(infile)
             root = os.path.splitext(filename)[0]
             outfile = os.path.join(path, root + '_tokens.txt')
