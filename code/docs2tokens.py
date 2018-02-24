@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import multiprocessing
 import argparse
@@ -50,18 +51,30 @@ def doctokens2file(infile: str, outfile: str) -> str:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename')
+    parser = argparse.ArgumentParser(description='Tokenize raw text lemmatize and strip punctuation')
+    parser.add_argument('filename', nargs='+')
     parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
+    parser.add_argument('-o', '--output', help='Output Path')
     args = parser.parse_args()
     nlp = spacy.load('en_core_web_sm')
-    if args.bucket:
-        infile = '/'.join(['s3:/', args.bucket, args.filename])
-        print(infile)
-    else:
-        infile = '/'.join(['s3:/', args.filename])
-        print(infile)
-    path, filename = os.path.split(infile)
-    root = os.path.splitext(filename)[0]
-    outfile = os.path.join(path, root + '_tokens.txt')
-    doctokens2file(infile, outfile)
+    for fname in args.filename:
+        if args.bucket:
+            infile = '/'.join(['s3:/', args.bucket, fname])
+            print(infile)
+        else:
+            infile = '/'.join(['s3:/', fname])
+            print(infile)
+        if args.output:
+            _, filename = os.path.split(infile)
+            root = os.path.splitext(filename)[0]
+            outfile = os.path.join('s3://',
+                                   args.bucket,
+                                   args.output,
+                                   root + '_tokens.txt')
+            print(outfile)
+        else:
+            path, filename = os.path.split(infile)
+            root = os.path.splitext(filename)[0]
+            outfile = os.path.join(path, root + '_tokens.txt')
+            print(outfile)
+        doctokens2file(infile, outfile)
