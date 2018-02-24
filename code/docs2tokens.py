@@ -1,6 +1,6 @@
-import sys
 import os
 import multiprocessing
+import argparse
 from typing import Iterator
 import spacy
 import smart_open
@@ -50,10 +50,18 @@ def doctokens2file(infile: str, outfile: str) -> str:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename')
+    parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
+    args = parser.parse_args()
     nlp = spacy.load('en_core_web_sm')
-    infiles = sys.argv[1:]
-    for infile in infiles:
-        path, filename = os.path.split(infile)
-        root = os.path.splitext(filename)[0]
-        outfile = os.path.join(path, root + '_tokens.txt')
-        doctokens2file(infile, outfile)
+    if args.bucket:
+        infile = '/'.join(['s3:/', args.bucket, args.filename])
+        print(infile)
+    else:
+        infile = '/'.join(['s3:/', args.filename])
+        print(infile)
+    path, filename = os.path.split(infile)
+    root = os.path.splitext(filename)[0]
+    outfile = os.path.join(path, root + '_tokens.txt')
+    doctokens2file(infile, outfile)
