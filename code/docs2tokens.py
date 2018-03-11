@@ -4,6 +4,7 @@ import multiprocessing
 import argparse
 import fnmatch
 from typing import Iterator, List
+import time
 import spacy
 import boto
 import smart_open
@@ -30,7 +31,7 @@ def doc2tokens(infile: str) -> Iterator[str]:
 
     '''
     for doc in nlp.pipe(get_doc(infile),
-                        batch_size=1000,
+                        batch_size=2000,
                         n_threads=multiprocessing.cpu_count()):
         yield ' '.join((token.lemma_
                         for token in doc
@@ -75,8 +76,9 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
     parser.add_argument('-o', '--output', help='Output Path')
     args = parser.parse_args()
-    nlp = spacy.load('en_core_web_sm')
+    nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
     filepaths = list_file('pto-us-data', 'text-data')
+    start = time.time()
     for fname in fnmatch.filter(filepaths, args.filename):
         if args.bucket:
             infile = '/'.join(['s3:/', args.bucket, fname])
@@ -97,3 +99,6 @@ if __name__ == '__main__':
             outfile = os.path.join(path, root + '_tokens.txt')
             print(outfile)
         doctokens2file(infile, outfile)
+    end = time.time()
+    delta = end - start
+    print('Time to Tokenize:', delta, ' sec')
