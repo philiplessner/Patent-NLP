@@ -40,10 +40,15 @@ if __name__ == '__main__':
                                      description=description)
     parser.add_argument('filename')
     parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
+    parser.add_argument('-o', '--output', help='Output Path')
+    parser.add_argument('-d', '--dictionary', help='Existing Corpus Dictionary')
     args = parser.parse_args()
     filepaths = list_file('pto-us-data', 'token-text')
     start = time.time()
-    term_dict = corpora.Dictionary(documents=None)
+    if args.dictionary:
+        term_dict = corpora.Dictionary.load(args.dictionary)
+    else:
+        term_dict = corpora.Dictionary(documents=None)
     for fname in fnmatch.filter(filepaths, args.filename):
         if args.bucket:
             infile = '/'.join(['s3:/', args.bucket, fname])
@@ -54,6 +59,9 @@ if __name__ == '__main__':
             path, filename = os.path.split(infile)
         term_dict.add_documents([tokens for tokens in get_tokens(infile)])
     term_dict.compactify()
+    if args.output:
+        with smart_open.smart_open(args.output, 'wb') as fout:
+            term_dict.save(fout)
     end = time.time()
     delta = end - start
     print('Time to Make Dictionary', delta, ' sec')
