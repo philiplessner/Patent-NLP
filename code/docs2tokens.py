@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help='Output Path')
     args = parser.parse_args()
     nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-    filepaths = list_file('pto-us-data', 'text-data')
+    filepaths = list_file(args.bucket, 'raw-text')
     start = time.time()
     for fname in fnmatch.filter(filepaths, args.filename):
         if args.bucket:
