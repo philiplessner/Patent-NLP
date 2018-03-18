@@ -2,8 +2,7 @@ import os
 import argparse
 import fnmatch
 from typing import Iterator, List
-import gensim
-from gensim import corpora, models
+from gensim import corpora
 import time
 import boto
 import smart_open
@@ -40,15 +39,13 @@ if __name__ == '__main__':
                                      description=description)
     parser.add_argument('filename')
     parser.add_argument('-b', '--bucket', help='S3 Bucket Name')
-    parser.add_argument('-o', '--output', help='Output Path')
-    parser.add_argument('-d', '--dictionary', help='Existing Corpus Dictionary')
+    parser.add_argument('-d', '--dictionary',
+                        help='Full Path to Dictionary File')
+    parser.add_argument('-v', '--vector',
+                        help='Full Path to Vector File')
     args = parser.parse_args()
     filepaths = list_file('pto-us-data', 'token-text')
-    start = time.time()
-    if args.dictionary:
-        term_dict = corpora.Dictionary.load(args.dictionary)
-    else:
-        term_dict = corpora.Dictionary(documents=None)
+    infiles = []
     for fname in fnmatch.filter(filepaths, args.filename):
         if args.bucket:
             infile = '/'.join(['s3:/', args.bucket, fname])
@@ -57,11 +54,17 @@ if __name__ == '__main__':
             infile = '/'.join(['s3:/', fname])
             print(infile)
             path, filename = os.path.split(infile)
-        term_dict.add_documents([tokens for tokens in get_tokens(infile)])
-    term_dict.compactify()
-    if args.output:
-        with smart_open.smart_open(args.output, 'wb') as fout:
+        infiles.append(infile)
+    start = time.time()
+    term_dict = corpora.Dictionary([tokens for tokens in get_tokens(infile)
+                                    for infile in infiles])
+    if args.dictionary:
+        with smart_open.smart_open(args.dictionary, 'wb') as fout:
             term_dict.save(fout)
     end = time.time()
     delta = end - start
     print('Time to Make Dictionary', delta, ' sec')
+    corpus = [term_dict.doc2bow(tokens)
+              for tokens in get_tokens(infile) for infile in infiles]
+    if args.vector:
+        corpora.MmCorpus.serialize(args.vector, corpus, id2word=term_dict)
