@@ -38,6 +38,14 @@ def list_files(mybucket: str, prefix: str) -> List[str]:
 
 def match_files(matchfiles: str,
                 allfiles: List[str], bucket: str) -> List[str]:
+    '''Match a glob filename with a list of files
+       Parameters
+            matchfiles: glob filename
+            allfiles: list of files to match
+            bucket: Amazon S3 bucket name
+        Returns
+            infiles: list of files matched
+    '''
     infiles = []
     for fname in fnmatch.filter(allfiles, matchfiles):
         if bucket:
@@ -52,12 +60,30 @@ def match_files(matchfiles: str,
 
 
 def make_dict(infiles: List[str]) -> gensim.corpora.dictionary.Dictionary:
+    '''Make a gensim corpora dictionary from files of newline terminated strings.
+       Each newline terminated string is a document.
+       Parameter
+            infiles: list of filepaths
+       Returns
+            gensim corpora dictionary (mapping of integer id's to unique words)
+    '''
     term_dict = corpora.Dictionary((tokens for tokens in get_tokens(infiles)))
     return term_dict
 
 
 def make_corpus(infiles: List[str],
                 term_dict: gensim.corpora.dictionary.Dictionary) -> Corpus:
+    '''Make a gensim corpus from files of newline terminated strings and
+       a gensim dictionary (made from the same files).
+       The corpus is [(word id, word count), ...] for each document.
+       Parameters
+            infiles: list of filepaths
+            term_dict: gensim corpora dictionary
+        Returns
+            Iterator used to construct corpus
+            (corpus is Iterator[Iterator[Tuple[int, int]]])
+
+    '''
     return (term_dict.doc2bow(tokens)
             for tokens in get_tokens(infiles))
 
