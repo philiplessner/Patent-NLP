@@ -1,12 +1,14 @@
 import os
 import argparse
 import fnmatch
-from typing import Iterator, List
+from typing import Iterator, List, Tuple
 import gensim
 from gensim import corpora
-import time
 import boto
 import smart_open
+
+
+Corpus = Iterator[Iterator[Tuple[int, int]]]
 
 
 def get_tokens(infiles: List[str]) -> Iterator[str]:
@@ -49,16 +51,15 @@ def match_files(matchfiles: str,
     return infiles
 
 
-def make_dict(infiles: List[str]) -> gensim.corpora.Dictionary:
-    start = time.time()
-    term_dict = corpora.Dictionary([tokens for tokens in get_tokens(infiles)])
-    if args.dictionary:
-        with smart_open.smart_open(args.dictionary, 'wb') as fout:
-            term_dict.save(fout)
-    end = time.time()
-    delta = end - start
-    print('Time to Make Dictionary', delta, ' sec')
+def make_dict(infiles: List[str]) -> gensim.corpora.dictionary.Dictionary:
+    term_dict = corpora.Dictionary((tokens for tokens in get_tokens(infiles)))
     return term_dict
+
+
+def make_corpus(infiles: List[str],
+                term_dict: gensim.corpora.dictionary.Dictionary) -> Corpus:
+    return (term_dict.doc2bow(tokens)
+            for tokens in get_tokens(infiles))
 
 
 if __name__ == '__main__':
@@ -77,7 +78,9 @@ if __name__ == '__main__':
     allfiles = list_files('pto-us-data', 'token-text')
     infiles = match_files(args.filename, allfiles, args.bucket)
     term_dict = make_dict(infiles)
-    corpus = [term_dict.doc2bow(tokens)
-              for tokens in get_tokens(infiles)]
+    corpus = make_corpus(infiles, term_dict)
+    if args.dictionary:
+        with smart_open.smart_open(args.dictionary, 'wb') as fout:
+            term_dict.save(fout)
     if args.vector:
         corpora.MmCorpus.serialize(args.vector, corpus, id2word=term_dict)
