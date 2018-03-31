@@ -1,5 +1,7 @@
+import sys
 import os
 import argparse
+import logging
 import fnmatch
 from typing import Iterator, List, Tuple
 import gensim
@@ -46,14 +48,15 @@ def match_files(matchfiles: str,
         Returns
             infiles: list of files matched
     '''
+    logger.info('%s', 'Input Files')
     infiles = []
     for fname in fnmatch.filter(allfiles, matchfiles):
         if bucket:
             infile = '/'.join(['s3:/', bucket, fname])
-            print(infile)
+            logger.info('%s', infile)
         else:
             infile = '/'.join(['s3:/', fname])
-            print(infile)
+            logger.info('%s', infile)
             path, filename = os.path.split(infile)
         infiles.append(infile)
     return infiles
@@ -88,6 +91,22 @@ def make_corpus(infiles: List[str],
             for tokens in get_tokens(infiles))
 
 
+def setup_logger():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('../logs/nlp.log')
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    logstr = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(logstr)
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger
+
+
 if __name__ == '__main__':
     description = '''Vectorize tokens
                   '''
@@ -101,12 +120,16 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--vector',
                         help='Full Path to Vector File')
     args = parser.parse_args()
+    logger = setup_logger()
+    logger.info('%s%s', 'Running ', sys.argv[0])
     allfiles = list_files('pto-us-data', 'token-text')
     infiles = match_files(args.filename, allfiles, args.bucket)
     term_dict = make_dict(infiles)
-    corpus = make_corpus(infiles, term_dict)
     if args.dictionary:
         with smart_open.smart_open(args.dictionary, 'wb') as fout:
             term_dict.save(fout)
+        logger.info('%s%s', 'Corpora Dictionary File ', args.dictionary)
+    corpus = make_corpus(infiles, term_dict)
     if args.vector:
         corpora.MmCorpus.serialize(args.vector, corpus, id2word=term_dict)
+        logger.info('%s%s', 'Corpus MM File ', args.vector)
